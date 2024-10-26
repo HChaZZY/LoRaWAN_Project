@@ -709,20 +709,19 @@ ARM Macro Assembler    Page 11
   435 0000001C                 END
               00000000 
               00000000 
-Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
-erwork --depend=.\stm32l476vg_db\startup_stm32l476xx.d -o.\stm32l476vg_db\start
-up_stm32l476xx.o -I.\RTE\_LR_TRAIN -I"D:\Program Files\Keil_v5\KeilPacks\Keil\S
-TM32L4xx_DFP\2.5.0\Drivers\CMSIS\Device\ST\STM32L4xx\Include" -I"D:\Program Fil
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp.sp --apcs=
+interwork --depend=.\stm32l476vg_db\startup_stm32l476xx.d -o.\stm32l476vg_db\st
+artup_stm32l476xx.o -IC:\Users\ly666\AppData\Local\Arm\Packs\Keil\STM32L4xx_DFP
+\2.2.0\Drivers\CMSIS\Device\ST\STM32L4xx\Include -IC:\Keil_v5\ARM\CMSIS\Include
 
 
 
 ARM Macro Assembler    Page 12 
 
 
-es\Keil_v5\ARM\CMSIS\Include" --predefine="__MICROLIB SETA 1" --predefine="__UV
-ISION_VERSION SETA 528" --predefine="STM32L476xx SETA 1" --list=startup_stm32l4
-76xx.lst ..\Drivers\CMSIS\Device\ST\STM32L4xx\Source\Templates\arm\startup_stm3
-2l476xx.s
+ --predefine="__MICROLIB SETA 1" --predefine="__UVISION_VERSION SETA 532" --pre
+define="STM32L476xx SETA 1" --list=startup_stm32l476xx.lst ..\Drivers\CMSIS\Dev
+ice\ST\STM32L4xx\Source\Templates\arm\startup_stm32l476xx.s
 
 
 

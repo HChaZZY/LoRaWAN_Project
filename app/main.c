@@ -1,28 +1,26 @@
 /**
-* @mainpage		介绍
-* @author     	Lierda-WSN-LoRaWAN-TEAM
-* @version 		V1.0.3
-* @date 		2020-08-30
-*
-* LoRaWAN_TRAIN 是基于LoRaWAN协议的传感器数据传输实验代码，该实验终端使用利尔达LoRaWAN开发板完成；以下内容包含开发板使用、重要文件说明、重要函数说明
-* - 1. ICA模块工作模式与工作状态控制接口
-* 	- 激活状态与休眠状态切换
-* 	- 指令与透传模式的切换
-* - 2. AT指令进行模块参数配置接口
-* - 3. 入网接口
-* - 4. 数据发送接口
-* - 5. 大数据包发送接口（驱动中已实现终端的拆分包协议）
-*
-* @section application_arch 01 模块驱动的应用框架
-*
-* LoRaWAN ICA Node Driver典型使用方式：
-* @image html LoRaWAN_ICA-Module-driver.png "Figure 1: Uart driver of ICA Node
-*
-* @section  LoRaWAN_ICA_Node_Driver API
-* 更多详细信息，请参考 @ref ICA-Driver
-*/
-
-
+ * @mainpage		介绍
+ * @author     	Lierda-WSN-LoRaWAN-TEAM
+ * @version 		V1.0.3
+ * @date 		2020-08-30
+ *
+ * LoRaWAN_TRAIN 是基于LoRaWAN协议的传感器数据传输实验代码，该实验终端使用利尔达LoRaWAN开发板完成；以下内容包含开发板使用、重要文件说明、重要函数说明
+ * - 1. ICA模块工作模式与工作状态控制接口
+ * 	- 激活状态与休眠状态切换
+ * 	- 指令与透传模式的切换
+ * - 2. AT指令进行模块参数配置接口
+ * - 3. 入网接口
+ * - 4. 数据发送接口
+ * - 5. 大数据包发送接口（驱动中已实现终端的拆分包协议）
+ *
+ * @section application_arch 01 模块驱动的应用框架
+ *
+ * LoRaWAN ICA Node Driver典型使用方式：
+ * @image html LoRaWAN_ICA-Module-driver.png "Figure 1: Uart driver of ICA Node
+ *
+ * @section  LoRaWAN_ICA_Node_Driver API
+ * 更多详细信息，请参考 @ref ICA-Driver
+ */
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -42,193 +40,190 @@
 #include "mma8451.h"
 #include "ST7789v.h"
 #include "XPT2046.h"
-#include "Lcd_App.h"
+#include "math.h"
 /* USER CODE BEGIN 0 */
-extern uint8_t LCD_EN;
-/* USER CODE END 0 */
+char dateStr[16]; // 用于存储格式化的时间字符串
+char timeStr[16];
+char DEVEUI[32] = "0";
+char APPEUI[32] = "0";
+char APPKEY[64] = "0";
+int positions1[] = {3, 4, 5, 6, 7, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23, 24, 26, 27, 29, 30, 32, 33};
+int positions2[] = {43, 44, 45, 46, 47, 48, 49, 51, 52, 54, 55, 57, 58, 60, 61, 63, 64, 66, 67, 69, 70, 72, 73};
+int positions3[] = {83, 84, 85, 86, 87, 88, 89, 91, 92, 94, 95, 97, 98, 100, 101, 103, 104, 106, 107, 109, 110, 112, 113, 115, 116, 118, 119, 121, 122, 124, 125, 127, 128, 130, 131, 133, 134, 136, 137};
+char buffer1[] = "AT+DEVEUI?\r\nAT+APPEUI?\r\nAT+APPKEY?\r\n";
+char buffer2[] = "AT+DEVEUI=0095690000027B34,D391010220102816,1\r\n";
+char buffer3[] = "AT+APPEUI=C7E70A4A90F9B346\r\n";
+char buffer4[] = "AT+APPKEY=927AD9A98925A5527E4EF71C5FB99CE0,0\r\n";
+uint8_t i = 0;
+char parameter[] = {0};
+u16 pos_temp;  // 坐标缓存值
+u16 pos_temp1; // 坐标缓存值
 
+extern Pen_Holder Pen_Point; // 定义笔实体
+/* USER CODE END 0 */
+void DisplayStatus(void);
 /**
-* @brief  The application entry point.
-*
-* @retval None
-*/
+ * @brief  The application entry point.
+ *
+ * @retval None
+ */
 int main(void)
 {
     HAL_Init();
-	
-    /* 系统时钟配置 */
+
+    /** 系统时钟配置 */
     SystemClock_Config();
-	
-    /* 外设初始化 */	
+
+    /** 外设初始化 */
     MX_GPIO_Init();
     MX_DMA_Init();
     MX_RTC_Init();
-	
-    /** -----串口初始化-------*/	
-    mx_lpusart1_uart_init(9600);  //MCU与模块相连串口
-    mx_usart2_uart_init(115200);  //MCU与PC相连串口
-	MX_I2C1_Init();
-	
-    HAL_Delay(20); 
-    lpusart1_clear_it();         //清除中断并开启空闲中断
-    usart2_clear_it();           //清除中断并开启空闲中断
-    
-	/** 温湿度传感器 */
-	HDC1000_Init();
-	
-	/** 光强传感器 */
-	OPT3001_Init();
-	
-	/** 气压传感器 */
-	MPL3115_Init(MODE_BAROMETER);
-	
-	/** 加速度传感器 */
-	MMA8451_Init();
-	
-	if(HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_2) == 1 && HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_0) == 1)
-	{
-		LCD_EN = 1;
-		
-	}else
-  	{
-  		LCD_EN = 0;
-  	}
 
+    /** 串口初始化 */
+    MX_LPUART1_Init(9600);  // MCU与模块相连串口
+    MX_USART2_Init(115200); // MCU与PC相连串口
+    MX_I2C1_Init();
 
-  
-  if(LCD_EN)   //如果有液晶，需要进行初始化
-  {
-  	ST7789V_INIT();
-  	XPT2046_init();
-	MX_TIM15_Init(1500);
-	LCD_Test();
-	Touch_Adjust();
-  }
-  
-    HAL_Delay(500);              //模块上电初始化时间   
+    HAL_Delay(20);
 
-	/** 复位模块 */
-	nodeHardReset();
-	
-	/** 开发板信息打印 */
-	lorawan_borad_infor_print(); 
-	
+    LPUART1_Clear_IT(); // 清除中断并开启空闲中断
+    USART2_Clear_IT();  // 清除中断并开启空闲中断
+    /** 温湿度传感器 */
+    HDC1000_Init();
+
+    /** 光强传感器 */
+    OPT3001_Init();
+
+    /** 气压传感器 */
+    MPL3115_Init(MODE_BAROMETER);
+
+    /** 加速度传感器 */
+    MMA8451_Init();
+
+    /** 液晶 */
+    LCD_Init();
+
+    /** 复位模块 */
+    HAL_Delay(500); // 模块上电初始化时间
+    Node_Hard_Reset();
+
+    /** 开发板信息打印 */
+    LoRaWAN_Borad_Info_Print();
+
     /* Infinite loop */
     /* USER CODE BEGIN WHILE  */
     while (1)
     {
-        lorawan_func_process();
+        LoRaWAN_Func_Process();
     }
 }
 
 /**
-* @brief System Clock Configuration
-* @retval None
-*/
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
     RCC_OscInitTypeDef RCC_OscInitStruct;
-	RCC_ClkInitTypeDef RCC_ClkInitStruct;
-	RCC_PeriphCLKInitTypeDef PeriphClkInit;
-	
-	/* PWR CLOCK ENABLE*/
+    RCC_ClkInitTypeDef RCC_ClkInitStruct;
+    RCC_PeriphCLKInitTypeDef PeriphClkInit;
+
+    /* PWR CLOCK ENABLE*/
     __PWR_CLK_ENABLE();
 
-    /**Configure the main internal regulator output voltage 
-    */
-	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+    /**Configure the main internal regulator output voltage
+     */
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-	  /**Initializes the CPU, AHB and APB busses clocks 
-	  */
-	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_LSI;
-//	RCC_OscInitStruct.LSEState = RCC_LSE_ON ;
-	RCC_OscInitStruct.HSIState = RCC_HSI_ON ;
-	RCC_OscInitStruct.LSIState = RCC_LSI_ON ;
-	RCC_OscInitStruct.HSICalibrationValue = 16;
-	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-	RCC_OscInitStruct.PLL.PLLM = 1;
-	RCC_OscInitStruct.PLL.PLLN = 10;
-	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
-	RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
-	RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;    //PLLCLK = HSI*N/M/R = 80MHz
-	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-	{
-	  	Error_Handler();
-	}
+    /**Initializes the CPU, AHB and APB busses clocks
+     */
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_LSI;
+    //	RCC_OscInitStruct.LSEState = RCC_LSE_ON ;
+    RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+    RCC_OscInitStruct.LSIState = RCC_LSI_ON;
+    RCC_OscInitStruct.HSICalibrationValue = 16;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+    RCC_OscInitStruct.PLL.PLLM = 1;
+    RCC_OscInitStruct.PLL.PLLN = 10;
+    RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
+    RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+    RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2; // PLLCLK = HSI*N/M/R = 80MHz
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+    {
+        Error_Handler();
+    }
 
-	/**Initializes the CPU, AHB and APB busses clocks */
-	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-								 |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK; //select the PLL as the system clock source
-	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;        //AHB prescaler
-	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;         //APB1 prescaler
-	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;         //APB2 prescaler
+    /**Initializes the CPU, AHB and APB busses clocks */
+    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK; // select the PLL as the system clock source
+    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;        // AHB prescaler
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;         // APB1 prescaler
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;         // APB2 prescaler
 
-	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
-	{
-		Error_Handler();
-	}
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
+    {
+        Error_Handler();
+    }
 
-	PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_USART2
-                              |RCC_PERIPHCLK_LPUART1|RCC_PERIPHCLK_I2C1 |RCC_PERIPHCLK_RTC;
-	PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
-	PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
-	PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_HSI;
-	PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
-	PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
-	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-	{
-		Error_Handler();
-	}
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1 | RCC_PERIPHCLK_USART2 | RCC_PERIPHCLK_LPUART1 | RCC_PERIPHCLK_I2C1 | RCC_PERIPHCLK_RTC;
+    PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
+    PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
+    PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_HSI;
+    PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
+    PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+    {
+        Error_Handler();
+    }
 
-	/**Configure the main internal regulator output voltage 
-	  */
-	if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
-	{
-		Error_Handler();
-	}
-	
-	/**Configure the Systick interrupt time 
-	  */
-	HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);  //1ms 中断一次
+    /**Configure the main internal regulator output voltage
+     */
+    if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
+    {
+        Error_Handler();
+    }
 
-	  /**Configure the Systick 
-	  */
-	HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+    /**Configure the Systick interrupt time
+     */
+    HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq() / 1000); // 1ms 中断一次
 
-	/* SysTick_IRQn interrupt configuration */
-	HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+    /**Configure the Systick
+     */
+    HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+
+    /* SysTick_IRQn interrupt configuration */
+    HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
 /* USER CODE END 4 */
 
 /**
-* @brief  This function is executed in case of error occurrence.
-* @param  file: The file name as string.
-* @param  line: The line in file as a number.
-* @retval None
-*/
+ * @brief  This function is executed in case of error occurrence.
+ * @param  file: The file name as string.
+ * @param  line: The line in file as a number.
+ * @retval None
+ */
 void _Error_Handler(char *file, int line)
 {
     /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state */
-    while(1)
+    while (1)
     {
     }
     /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
-* @brief  Reports the name of the source file and the source line number
-*         where the assert_param error has occurred.
-* @param  file: pointer to the source file name
-* @param  line: assert_param error line source number
-* @retval None
-*/
-void assert_failed(uint8_t* file, uint32_t line)
-{ 
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
+void assert_failed(uint8_t *file, uint32_t line)
+{
     /* USER CODE BEGIN 6 */
     /* User can add his own implementation to report the file name and line number,
     tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
@@ -237,11 +232,55 @@ void assert_failed(uint8_t* file, uint32_t line)
 #endif /* USE_FULL_ASSERT */
 
 /**
-* @}
-*/
+ * @}
+ */
+
+void DisplayStatus(void) {
+    RTC_TimeTypeDef time;
+    RTC_DateTypeDef date;
+    uint16_t temp, humi;
+    float pressure;
+    float lux;
+
+    // 读取传感器值
+    temp = HDC1000_Read_Temper();
+    humi = HDC1000_Read_Humidi();
+    pressure = MPL3115_ReadPressure();
+    lux = OPT3001_Get_Lux();
+
+    LCD_Fill(0, 0, 239, 36, BLUE);
+    char tempStr[20];
+    sprintf(tempStr, "Temperature: %d.%d C", temp / 1000, temp % 1000);
+    LCD_ShowString(10, 10, tempStr, BLACK);
+    lpusart1_send_string((uint8_t *)tempStr); // 发送温度值
+    // LCD_Clear(0xbefe);
+
+    LCD_Fill(0, 37, 239, 73, BLUE);
+    char humiStr[20];
+    sprintf(humiStr, "Humidity: %d.%d %", humi / 1000, humi % 1000);
+    LCD_ShowString(10, 47, humiStr, BLACK);
+    lpusart1_send_string((uint8_t *)humiStr); // 发送湿度值
+    // LCD_Clear(0xbefe);
+
+    LCD_Fill(0, 74, 239, 110, BLUE);
+    char pressureStr[20];
+    sprintf(pressureStr, "Pressure: %.2f Pa", pressure);
+    LCD_ShowString(10, 84, pressureStr, BLACK);
+    lpusart1_send_string((uint8_t *)pressureStr); // 发送气压值
+    // LCD_Clear(0xbefe);
+
+    LCD_Fill(0, 111, 239, 147, BLUE);
+    char luxStr[20];
+    sprintf(luxStr, "Lux: %.2f lx", lux);
+    LCD_ShowString(10, 121, luxStr, BLACK);
+    lpusart1_send_string((uint8_t *)luxStr); // 发送光照强度值
+                                             // LCD_Clear(0xbefe);
+
+    // LCD_Clear(0xbefe);
+}
 
 /**
-* @}
-*/
+ * @}
+ */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -9,8 +9,8 @@
 #include "stm32l4xx_hal.h"
 
 typedef enum {
-	MODE_ALTIMETER,
-	MODE_BAROMETER,
+    MODE_ALTIMETER,
+    MODE_BAROMETER,
 } MPL3115_MODE_T;
 
 #define MPL3115_DEVICE_ADDRESS		0xC0

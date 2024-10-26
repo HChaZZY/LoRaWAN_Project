@@ -16,9 +16,9 @@ extern bool timeout_start_flag;  //Timeout sign
 
 /** 设备模式功能定义 */
 typedef enum {
-	CMD_CONFIG_MODE = 0,
-	DATA_TRANSPORT_MODE,
-	PRO_TRAINING_MODE,
+    CMD_CONFIG_MODE = 0,
+    DATA_TRANSPORT_MODE,
+    PRO_TRAINING_MODE,
     NO_MODE
 } DEVICE_MODE_T;
 

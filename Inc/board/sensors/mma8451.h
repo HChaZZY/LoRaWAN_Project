@@ -28,9 +28,9 @@
 
 /* var */
 typedef struct {
-	int16_t accel_x;
-	int16_t accel_y;
-	int16_t accel_z;
+    int16_t accel_x;
+    int16_t accel_y;
+    int16_t accel_z;
 } ACCELER_T;
 
 /* function */

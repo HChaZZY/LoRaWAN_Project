@@ -55,6 +55,7 @@ extern TIM_HandleTypeDef htim15;
 extern void _Error_Handler(char *, int);
                   
 void Tim6_Conf(uint16_t time);                
+void MX_TIM15_Init(uint32_t pwm_puty);
 
 #define SYSCLOCK_FREQ 80000000
 

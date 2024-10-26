@@ -11,19 +11,19 @@
 #define u8 uint8_t
 
 //笔杆结构体
-typedef struct 
+typedef struct
 {
-	u16 X0;//原始坐标
-	u16 Y0;
-	u16 X; //最终/暂存坐标
-	u16 Y;						   	    
-	u8  Key_Sta;//笔的状态			  
+    u16 X0;//原始坐标
+    u16 Y0;
+    u16 X; //最终/暂存坐标
+    u16 Y;
+    u8  Key_Sta;//笔的状态
 //触摸屏校准参数
-	float xfac;
-	float yfac;
-	short xoff;
-	short yoff;
-}Pen_Holder;
+    float xfac;
+    float yfac;
+    short xoff;
+    short yoff;
+} Pen_Holder;
 
 
 //ADS7843/7846/UH7843/7846/XPT2046/TSC2046 指令集

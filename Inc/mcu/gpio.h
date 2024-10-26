@@ -67,7 +67,7 @@
 
 //----------LED OF WAKE\MODE\BUSY\STAT\RST Macro definition-------------------------
 #define LedGpio_D6		GPIOD
-#define LedGpio_D7    	GPIOA
+#define LedGpio_D7    GPIOA
 #define LedGpio_D8		GPIOB
 #define LedGpio_D11		GPIOE
 #define LedPin_D6  		GPIO_PIN_7	 

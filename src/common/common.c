@@ -7,19 +7,20 @@
 bool timeout_start_flag = true;
 
 /** 定义设备模式参数 */
+
 DEVICE_MODE_T device_mode = NO_MODE;
-DEVICE_MODE_T *Device_Mode_str = &device_mode; 
+DEVICE_MODE_T *Device_Mode_str = &device_mode;
 
 
 /**
 *  延时函数
 *@param 	delay: 延时的时间，单位毫秒
 */
-void system_delay_ms(uint32_t delay) 
+void system_delay_ms(uint32_t delay)
 {
-	uint32_t tickstart = 0U;
-	tickstart = GET_SYSTEM_TIME;
-	while((GET_SYSTEM_TIME - tickstart) < delay);
+    uint32_t tickstart = 0U;
+    tickstart = GET_SYSTEM_TIME;
+    while((GET_SYSTEM_TIME - tickstart) < delay);
 }
 
 
@@ -30,19 +31,19 @@ void system_delay_ms(uint32_t delay)
 */
 bool time_out_break_ms( uint32_t time )
 {
-	static uint32_t start_time;
-	
-	if(true == timeout_start_flag)
-	{
-		start_time = GET_SYSTEM_TIME;
-		timeout_start_flag = false;
-	}
-	if(SUBTRANCTION_CORSS_ZERO(GET_SYSTEM_TIME, start_time) >= time)
-	{
-		timeout_start_flag = true;
-		return true;
-	}
-	return false;
+    static uint32_t start_time;
+
+    if(true == timeout_start_flag)
+    {
+        start_time = GET_SYSTEM_TIME;
+        timeout_start_flag = false;
+    }
+    if(SUBTRANCTION_CORSS_ZERO(GET_SYSTEM_TIME, start_time) >= time)
+    {
+        timeout_start_flag = true;
+        return true;
+    }
+    return false;
 }
 
 
@@ -64,8 +65,8 @@ void lower2upper_and_remove_spaces(uint8_t *src,  uint8_t *des)
         {
             *des++ = *src;
         }
-        
-    }while(*src++);	
+
+    } while(*src++);
 }
 
 
@@ -80,7 +81,7 @@ void lower2upper_and_remove_spaces(uint8_t *src,  uint8_t *des)
 uint8_t* find_string(uint8_t *s, uint8_t *d)
 {
     uint8_t *tmp;
-    
+
     while(0 != *s && 0 != *d)
     {
         tmp = d;
@@ -89,7 +90,7 @@ uint8_t* find_string(uint8_t *s, uint8_t *d)
             s++;
             tmp++;
         }
-        
+
         if(0 == *tmp)
         {
             return s;
@@ -131,7 +132,7 @@ void match_string(uint8_t *str, uint8_t *s, uint8_t *e, uint8_t *res)
 
             if(0 == *tmp)
             {
-				result_flag = 1;
+                result_flag = 1;
                 break;
             }
             else if(t_i > 0)
@@ -161,35 +162,35 @@ void match_string(uint8_t *str, uint8_t *s, uint8_t *e, uint8_t *res)
 *@param 	s: 转换字符的升序
 *@return	整数结果
 */
-uint32_t htoi(uint8_t s[], uint8_t size)  
-{  
-    uint8_t i = 0;  
-    uint32_t  n = 0;  
-	
-	
-    for (i = 0; i < size; i++)  
-    {  
-		s[i] = s[i] >= 'A' && s[i] <= 'Z' ? s[i] + 'a' - 'A' : s[i];
+uint32_t htoi(uint8_t s[], uint8_t size)
+{
+    uint8_t i = 0;
+    uint32_t  n = 0;
 
-		if((s[i] >= '0' && s[i] <= '9') || (s[i] >= 'a' && s[i] <= 'z'))
-		{
-			if (s[i] > '9')  
-			{
-				n = (n << 4) + (10 + s[i] - 'a');  
-			}
-			else  
-			{  
-				n = (n << 4) + (s[i] - '0');  
-			} 			
-		}
-		else
-		{
-			break;
-		}
+
+    for (i = 0; i < size; i++)
+    {
+        s[i] = s[i] >= 'A' && s[i] <= 'Z' ? s[i] + 'a' - 'A' : s[i];
+
+        if((s[i] >= '0' && s[i] <= '9') || (s[i] >= 'a' && s[i] <= 'z'))
+        {
+            if (s[i] > '9')
+            {
+                n = (n << 4) + (10 + s[i] - 'a');
+            }
+            else
+            {
+                n = (n << 4) + (s[i] - '0');
+            }
+        }
+        else
+        {
+            break;
+        }
     }
 
-    return n;  
-}  
+    return n;
+}
 
 
 

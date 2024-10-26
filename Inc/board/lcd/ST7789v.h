@@ -94,9 +94,9 @@
 #define DATA15_HIGH()      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET)
 #define DATA15_LOW()     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET)
 
-void  LCD_WriteCommand(uint8_t comd);
+void LCD_WriteCommand(uint8_t comd);
 void LCD_WriteData_8bit(uint8_t data);
-void  ST7789V_INIT(void);
+void ST7789V_INIT(void);
 void LCDOpenWindows(uint16_t x, uint16_t y, uint16_t len, uint16_t wid);
 void LCD_WriteData_16bit(uint16_t data);
 void LCD_DrawPoint(uint16_t x,uint16_t y,uint8_t size,uint16_t color);
@@ -112,7 +112,7 @@ void LCD_ShowString(uint16_t x,uint16_t y,const uint8_t *p,uint16_t color);
 void delay_10ms(int count);
 void LCD_ST7789_DrawPicture(uint16_t StartX,uint16_t StartY,uint16_t Xend,uint16_t Yend,const unsigned char *pic,uint8_t mode);
 void LCD_Test(void);
+void LCD_Init(void);
 
 
-
-#endif 
+#endif

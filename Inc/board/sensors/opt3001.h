@@ -57,12 +57,12 @@
 #define OPT3001_RESULT_READY_LONG	1000
 
 typedef struct {
-	uint32_t mode;
-	uint32_t int_time;
-	uint16_t high_thresh_mantissa;
-	uint16_t low_thresh_mantissa;
-	uint8_t high_thresh_exp;
-	uint8_t low_htresh_exp;
+    uint32_t mode;
+    uint32_t int_time;
+    uint16_t high_thresh_mantissa;
+    uint16_t low_thresh_mantissa;
+    uint8_t high_thresh_exp;
+    uint8_t low_htresh_exp;
 } OPT3001_Def;
 
 

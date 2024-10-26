@@ -11,7 +11,7 @@
  * @defgroup  ICA-Driver LoRaWAN_ICA_Node_Driver API
  * @brief     该文件为用户提供一个针对LoRaWAN_ICA模块的串口驱动。
  * @{
- */   
+ */
 #include "lorawan_node_driver.h"
 #include "common.h"
 
@@ -19,7 +19,7 @@
   * @brief ICA驱动程序提供给用户的变量
   * @{
   */
-  
+
 /** 模块是否已成功入网 */
 bool node_join_successfully = false;
 
@@ -36,9 +36,9 @@ extern DEVICE_MODE_T device_mode;
 
 /**
   * @}
-  */ 
-  
-static void transfer_node_data(uint8_t *buffer, uint8_t size);  
+  */
+
+static void transfer_node_data(uint8_t *buffer, uint8_t size);
 static gpio_level_t node_gpio_read(node_gpio_t gpio);
 static void node_gpio_set(node_gpio_t type, node_status_t value);
 static bool transfer_configure_command(char *cmd);
@@ -59,9 +59,9 @@ static void commResultPrint(execution_status_t send_result);
 *@param		size: 数据的长度
 */
 static void transfer_node_data(uint8_t *buffer, uint8_t size)
-{	
-	UART_TO_LRM_RECEIVE_FLAG = 0;
-	UART_TO_MODULE_WRITE_DATA(buffer, size);
+{
+    UART_TO_LRM_RECEIVE_FLAG = 0;
+    UART_TO_MODULE_WRITE_DATA(buffer, size);
 }
 
 
@@ -73,16 +73,16 @@ static void transfer_node_data(uint8_t *buffer, uint8_t size)
 */
 static gpio_level_t node_gpio_read(node_gpio_t gpio)
 {
-	if(stat == gpio)
-	{
-		return (gpio_level_t)GET_STAT_LEVEL;
-	}
-	else if(busy == gpio)
-	{
-		return (gpio_level_t)GET_BUSY_LEVEL;
-	}
-	
-	return unknow;
+    if(stat == gpio)
+    {
+        return (gpio_level_t)GET_STAT_LEVEL;
+    }
+    else if(busy == gpio)
+    {
+        return (gpio_level_t)GET_BUSY_LEVEL;
+    }
+
+    return unknow;
 }
 
 
@@ -93,44 +93,44 @@ static gpio_level_t node_gpio_read(node_gpio_t gpio)
 */
 static void node_gpio_set(node_gpio_t type, node_status_t value)
 {
-	if(mode == type)
-	{
-		if(command == value)
-		{
-			if(GET_MODE_LEVEL == GPIO_PIN_RESET)
-			{
-				SET_MODE_HIGH;
-				system_delay_ms(10);
-			}			
-		}
-		else if(transparent == value)
-		{
-			if(GET_MODE_LEVEL == GPIO_PIN_SET)
-			{
-				SET_MODE_LOW;
-				system_delay_ms(10);				
-			}			
-		}
-	}
-	else if(wake == type)
-	{
-		if(wakeup == value)
-		{
-			if(GET_WAKE_LEVEL == GPIO_PIN_RESET)
-			{
-				SET_WAKE_HIGH;	
-				system_delay_ms(10);				
-			}
-		}
-		else if(sleep == value)
-		{
-			if(GET_WAKE_LEVEL == GPIO_PIN_SET)
-			{
-				SET_WAKE_LOW;
-				system_delay_ms(10);
-			}	
-		}		
-	}
+    if(mode == type)
+    {
+        if(command == value)
+        {
+            if(GET_MODE_LEVEL == GPIO_PIN_RESET)
+            {
+                SET_MODE_HIGH;
+                system_delay_ms(10);
+            }
+        }
+        else if(transparent == value)
+        {
+            if(GET_MODE_LEVEL == GPIO_PIN_SET)
+            {
+                SET_MODE_LOW;
+                system_delay_ms(10);
+            }
+        }
+    }
+    else if(wake == type)
+    {
+        if(wakeup == value)
+        {
+            if(GET_WAKE_LEVEL == GPIO_PIN_RESET)
+            {
+                SET_WAKE_HIGH;
+                system_delay_ms(10);
+            }
+        }
+        else if(sleep == value)
+        {
+            if(GET_WAKE_LEVEL == GPIO_PIN_SET)
+            {
+                SET_WAKE_LOW;
+                system_delay_ms(10);
+            }
+        }
+    }
 }
 
 
@@ -143,53 +143,53 @@ static void node_gpio_set(node_gpio_t type, node_status_t value)
 */
 static bool transfer_configure_command(char *cmd)
 {
-	uint8_t *result = NULL;
-	uint16_t timeouts = 0;
-	char tmp_cmd[255];
-	
-	node_gpio_set(wake, wakeup);
-	node_gpio_set(mode, command);
+    uint8_t *result = NULL;
+    uint16_t timeouts = 0;
+    char tmp_cmd[255];
 
-	lower2upper_and_remove_spaces((uint8_t *)cmd, (uint8_t *)tmp_cmd);
-	strcat(tmp_cmd, "\r\n");
-	
-	UART_TO_LRM_RECEIVE_FLAG = 0;
-	memset(UART_TO_LRM_RECEIVE_BUFFER, 0, sizeof(UART_TO_LRM_RECEIVE_BUFFER));
+    node_gpio_set(wake, wakeup);
+    node_gpio_set(mode, command);
 
-	UART_TO_LRM_WRITE_STRING((uint8_t *)tmp_cmd);
-	
-	if(NULL != find_string((uint8_t *)tmp_cmd, (uint8_t *)"AT+SAVE"))
-	{
-		timeouts = 2000;
-	}
-	else
-	{
-		timeouts = 50;
-	}
+    lower2upper_and_remove_spaces((uint8_t *)cmd, (uint8_t *)tmp_cmd);
+    strcat(tmp_cmd, "\r\n");
 
-	timeout_start_flag = true;
-	while(UART_TO_LRM_RECEIVE_FLAG == 0)
-	{
-		if(true == time_out_break_ms(timeouts))
-		{
-			break;
-		}
-	}
-	
-	UART_TO_LRM_RECEIVE_FLAG = 0;
-	result = find_string(UART_TO_LRM_RECEIVE_BUFFER, (uint8_t *)"OK");
-	
-	if(NULL != find_string((uint8_t *)tmp_cmd, (uint8_t *)"AT+RESET") && NULL != result)
-	{
-		system_delay_ms(150);
-	}
-	
-	if(NULL != find_string((uint8_t *)tmp_cmd, (uint8_t *)"AT+FACTORY") && NULL != result)
-	{
-		system_delay_ms(2000);
-	}
+    UART_TO_LRM_RECEIVE_FLAG = 0;
+    memset(UART_TO_LRM_RECEIVE_BUFFER, 0, sizeof(UART_TO_LRM_RECEIVE_BUFFER));
 
-	return result;
+    UART_TO_LRM_WRITE_STRING((uint8_t *)tmp_cmd);
+
+    if(NULL != find_string((uint8_t *)tmp_cmd, (uint8_t *)"AT+SAVE"))
+    {
+        timeouts = 2000;
+    }
+    else
+    {
+        timeouts = 50;
+    }
+
+    timeout_start_flag = true;
+    while(UART_TO_LRM_RECEIVE_FLAG == 0)
+    {
+        if(true == time_out_break_ms(timeouts))
+        {
+            break;
+        }
+    }
+
+    UART_TO_LRM_RECEIVE_FLAG = 0;
+    result = find_string(UART_TO_LRM_RECEIVE_BUFFER, (uint8_t *)"OK");
+
+    if(NULL != find_string((uint8_t *)tmp_cmd, (uint8_t *)"AT+RESET") && NULL != result)
+    {
+        system_delay_ms(150);
+    }
+
+    if(NULL != find_string((uint8_t *)tmp_cmd, (uint8_t *)"AT+FACTORY") && NULL != result)
+    {
+        system_delay_ms(2000);
+    }
+
+    return result;
 }
 
 /**
@@ -202,44 +202,44 @@ static bool transfer_configure_command(char *cmd)
 */
 static bool transfer_inquire_command(char *cmd, uint8_t *result)
 {
-	uint8_t *response = NULL;
-	uint8_t cmd_content[20] = {0}, i = 0;
-	char tmp_cmd[255];
-	
-	node_gpio_set(wake, wakeup);
-	node_gpio_set(mode, command);
-	
-	lower2upper_and_remove_spaces((uint8_t *)cmd, (uint8_t *)tmp_cmd);
-	strcat(tmp_cmd, "\r\n");
-	
-	UART_TO_LRM_RECEIVE_FLAG = 0;
-	memset(UART_TO_LRM_RECEIVE_BUFFER, 0, sizeof(UART_TO_LRM_RECEIVE_BUFFER));
-	
-	UART_TO_LRM_WRITE_STRING((uint8_t *)tmp_cmd);
-	
-	timeout_start_flag = true;
-	while(UART_TO_LRM_RECEIVE_FLAG == 0)
-	{
-		if(true == time_out_break_ms(500))
-		{
-			break;
-		}
-	}
-	UART_TO_LRM_RECEIVE_FLAG = 0;
-	
-	response = find_string(UART_TO_LRM_RECEIVE_BUFFER, (uint8_t *)"OK");
-	if(response)
-	{
-		match_string((uint8_t *)cmd, (uint8_t *)"AT", (uint8_t *)"?", cmd_content);	
-		while(0 != cmd_content[++i]);
-		cmd_content[i++] = ':';
-		match_string(UART_TO_LRM_RECEIVE_BUFFER, cmd_content, (uint8_t *)"OK", result);
-	}
-	else
-	{
-		memcpy(result,UART_TO_LRM_RECEIVE_BUFFER,strlen((char*)UART_TO_LRM_RECEIVE_BUFFER));
-	}
-	return response;
+    uint8_t *response = NULL;
+    uint8_t cmd_content[20] = {0}, i = 0;
+    char tmp_cmd[255];
+
+    node_gpio_set(wake, wakeup);
+    node_gpio_set(mode, command);
+
+    lower2upper_and_remove_spaces((uint8_t *)cmd, (uint8_t *)tmp_cmd);
+    strcat(tmp_cmd, "\r\n");
+
+    UART_TO_LRM_RECEIVE_FLAG = 0;
+    memset(UART_TO_LRM_RECEIVE_BUFFER, 0, sizeof(UART_TO_LRM_RECEIVE_BUFFER));
+
+    UART_TO_LRM_WRITE_STRING((uint8_t *)tmp_cmd);
+
+    timeout_start_flag = true;
+    while(UART_TO_LRM_RECEIVE_FLAG == 0)
+    {
+        if(true == time_out_break_ms(500))
+        {
+            break;
+        }
+    }
+    UART_TO_LRM_RECEIVE_FLAG = 0;
+
+    response = find_string(UART_TO_LRM_RECEIVE_BUFFER, (uint8_t *)"OK");
+    if(response)
+    {
+        match_string((uint8_t *)cmd, (uint8_t *)"AT", (uint8_t *)"?", cmd_content);
+        while(0 != cmd_content[++i]);
+        cmd_content[i++] = ':';
+        match_string(UART_TO_LRM_RECEIVE_BUFFER, cmd_content, (uint8_t *)"OK", result);
+    }
+    else
+    {
+        memcpy(result,UART_TO_LRM_RECEIVE_BUFFER,strlen((char*)UART_TO_LRM_RECEIVE_BUFFER));
+    }
+    return response;
 }
 
 
@@ -248,12 +248,12 @@ static bool transfer_inquire_command(char *cmd, uint8_t *result)
 */
 static uint8_t handle_cmd_return_data(char *data, uint8_t start, uint8_t length)
 {
-	static uint8_t inquire_return_data[150];
-	
-	memset(inquire_return_data, 0, 150);
-	transfer_inquire_command(data, inquire_return_data);
+    static uint8_t inquire_return_data[150];
 
-	return htoi((inquire_return_data + start), 2);	
+    memset(inquire_return_data, 0, 150);
+    transfer_inquire_command(data, inquire_return_data);
+
+    return htoi((inquire_return_data + start), 2);
 }
 
 
@@ -266,15 +266,15 @@ static uint8_t handle_cmd_return_data(char *data, uint8_t start, uint8_t length)
 */
 static bool nodePinBusyStatusHolding( gpio_level_t gpio_level, uint32_t time )
 {
-	timeout_start_flag = true;
-	while( gpio_level == node_gpio_read( busy ) )
-	{
-		if( true == time_out_break_ms( time ) )
-		{
-			return false;
-		}
-	}
-	return true;
+    timeout_start_flag = true;
+    while( gpio_level == node_gpio_read( busy ) )
+    {
+        if( true == time_out_break_ms( time ) )
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -302,86 +302,86 @@ static bool nodePinBusyStatusHolding( gpio_level_t gpio_level, uint32_t time )
  */
 static bool node_block_join(uint16_t time_second)
 {
-	gpio_level_t stat_level;
-	gpio_level_t busy_level;
-	
+    gpio_level_t stat_level;
+    gpio_level_t busy_level;
+
 #ifdef DEBUG_LOG_LEVEL_1
-	DEBUG_PRINTF("Start to join...\r\n");
+    DEBUG_PRINTF("Start to join...\r\n");
 #endif
 
-	// 1.切换到透传模式开始入网
-	node_gpio_set(wake, wakeup);
-	node_gpio_set(mode, transparent);
-	
-	timeout_start_flag = true;
-	do
-	{
-		// 2.循环查询STAT和BUSY引脚电平
-		stat_level = node_gpio_read(stat);
-		busy_level = node_gpio_read(busy);
-		
-		// 3.到达设定时间后若未入网则超时返回
-		if(true == time_out_break_ms(time_second * 1000))
-		{
-			node_join_successfully = false;
-			
-			node_gpio_set(wake, sleep);
-			
-#ifdef DEBUG_LOG_LEVEL_1			
-			DEBUG_PRINTF("Join failure\r\n");
-#endif			
-			return false;
-		}
-		
-		if(device_mode == CMD_CONFIG_MODE)
-		{
-			node_join_successfully = false;
-			return false;
-		}
-		
-		/* 若模块日志开启，等待入网日志 */
-		if(UART_TO_LRM_RECEIVE_FLAG)
-		{
-			UART_TO_LRM_RECEIVE_FLAG = 0;
-			usart2_send_data(UART_TO_LRM_RECEIVE_BUFFER,UART_TO_LRM_RECEIVE_LENGTH);
-		}
-	}while(high != stat_level || high != busy_level); 
-	
-	timeout_start_flag = true;
-	
-	/* 若日志开启，等待最后一包入网日志 */
-	while(0 == UART_TO_LRM_RECEIVE_FLAG)
-	{
-		if(true == time_out_break_ms(300))
-		{
-			break;
-		}
-	}
-	if(UART_TO_LRM_RECEIVE_FLAG)
-	{
-		UART_TO_LRM_RECEIVE_FLAG = 0;
-		usart2_send_data(UART_TO_LRM_RECEIVE_BUFFER,UART_TO_LRM_RECEIVE_LENGTH);
-	}
+    // 1.切换到透传模式开始入网
+    node_gpio_set(wake, wakeup);
+    node_gpio_set(mode, transparent);
+
+    timeout_start_flag = true;
+    do
+    {
+        // 2.循环查询STAT和BUSY引脚电平
+        stat_level = node_gpio_read(stat);
+        busy_level = node_gpio_read(busy);
+
+        // 3.到达设定时间后若未入网则超时返回
+        if(true == time_out_break_ms(time_second * 1000))
+        {
+            node_join_successfully = false;
+
+            node_gpio_set(wake, sleep);
+
+#ifdef DEBUG_LOG_LEVEL_1
+            DEBUG_PRINTF("Join failure\r\n");
+#endif
+            return false;
+        }
+
+        if(device_mode == CMD_CONFIG_MODE)
+        {
+            node_join_successfully = false;
+            return false;
+        }
+
+        /* 若模块日志开启，等待入网日志 */
+        if(UART_TO_LRM_RECEIVE_FLAG)
+        {
+            UART_TO_LRM_RECEIVE_FLAG = 0;
+            usart2_send_data(UART_TO_LRM_RECEIVE_BUFFER,UART_TO_LRM_RECEIVE_LENGTH);
+        }
+    } while(high != stat_level || high != busy_level);
+
+    timeout_start_flag = true;
+
+    /* 若日志开启，等待最后一包入网日志 */
+    while(0 == UART_TO_LRM_RECEIVE_FLAG)
+    {
+        if(true == time_out_break_ms(300))
+        {
+            break;
+        }
+    }
+    if(UART_TO_LRM_RECEIVE_FLAG)
+    {
+        UART_TO_LRM_RECEIVE_FLAG = 0;
+        usart2_send_data(UART_TO_LRM_RECEIVE_BUFFER,UART_TO_LRM_RECEIVE_LENGTH);
+    }
 
 #ifdef USE_NODE_STATUS
-	UART_RECEIVE_FLAG = 0;
-	
-	timeout_start_flag = true;
-	while(0 == UART_RECEIVE_FLAG && false == time_out_break_ms(50));
-	
-	if(1 == UART_RECEIVE_FLAG)
-	{
-		UART_RECEIVE_FLAG = 0;
-		last_up_datarate = UART_RECEIVE_BUFFER[4];
-	}
-#endif	
+    UART_RECEIVE_FLAG = 0;
+
+    timeout_start_flag = true;
+    while(0 == UART_RECEIVE_FLAG && false == time_out_break_ms(50));
+
+    if(1 == UART_RECEIVE_FLAG)
+    {
+        UART_RECEIVE_FLAG = 0;
+        last_up_datarate = UART_RECEIVE_BUFFER[4];
+    }
+#endif
 
 #ifdef DEBUG_LOG_LEVEL_1
-	DEBUG_PRINTF("Join seccussfully\r\n");
+    DEBUG_PRINTF("Join seccussfully\r\n");
 #endif
-	// 5.若未超时返回则表明模块入网成功
-	node_join_successfully = true;
-	return true;
+    // 5.若未超时返回则表明模块入网成功
+    node_join_successfully = true;
+    return true;
 }
 
 
@@ -394,95 +394,95 @@ static bool node_block_join(uint16_t time_second)
 */
 static void down_data_process(down_list_t **list_head)
 {
-	down_list_t *p1 = NULL;
-	down_list_t *p2 = NULL;
-	uint16_t cnt = 0;
-	
-#ifdef USE_NODE_STATUS		
-	// 若这两个条件均不满足，则表示这不是最后一个下行包，且无业务数据
-	if(UART_RECEIVE_LENGTH > 5 || high == node_gpio_read(busy)) 
-	{
+    down_list_t *p1 = NULL;
+    down_list_t *p2 = NULL;
+    uint16_t cnt = 0;
+
+#ifdef USE_NODE_STATUS
+    // 若这两个条件均不满足，则表示这不是最后一个下行包，且无业务数据
+    if(UART_RECEIVE_LENGTH > 5 || high == node_gpio_read(busy))
+    {
 #endif
-		if(NULL != *list_head)
-		{
-			p2 = *list_head;
-			
-			while(p2->next)
-			{
-				p2 = p2->next;
-			}
-		}
-					
-		p1 = (down_list_t *)malloc(sizeof(down_list_t));
-		
-		if(NULL != p1)
-		{
+        if(NULL != *list_head)
+        {
+            p2 = *list_head;
+
+            while(p2->next)
+            {
+                p2 = p2->next;
+            }
+        }
+
+        p1 = (down_list_t *)malloc(sizeof(down_list_t));
+
+        if(NULL != p1)
+        {
 #ifdef USE_NODE_STATUS
-			p1->down_info.size = UART_RECEIVE_LENGTH - 5;
+            p1->down_info.size = UART_RECEIVE_LENGTH - 5;
 #else
-			p1->down_info.size = UART_TO_LRM_RECEIVE_LENGTH;
-#endif				
-			if(0 == p1->down_info.size)
-			{
-				p1->down_info.business_data = NULL;
-			}
-			else
-			{
-				p1->down_info.business_data = (uint8_t *)malloc(p1->down_info.size);
-			}		
-			
-			if(NULL == p1->down_info.business_data && 0 != p1->down_info.size)  
-			{
-				free(p1);
-#ifdef DEBUG_LOG_LEVEL_0
-				DEBUG_PRINTF ("Error：Dynamic application for memory failure -- p1->down_info.business_data\r\n");
-#endif											
-			}
-			else
-			{	
-#ifdef USE_NODE_STATUS
-				for(cnt = 1; cnt <= p1->down_info.size; cnt++)
-				{
-					*(p1->down_info.business_data + cnt - 1) = UART_RECEIVE_BUFFER[cnt];
-				}	
-				p1->down_info.result_ind = UART_RECEIVE_BUFFER[cnt++];
-				p1->down_info.snr = UART_RECEIVE_BUFFER[cnt++];
-				p1->down_info.rssi = UART_RECEIVE_BUFFER[cnt++];
-				p1->down_info.datarate = UART_RECEIVE_BUFFER[cnt] & 0x0f;
-#else
-				for(cnt = 0; cnt < p1->down_info.size; cnt++)
-				{
-					*(p1->down_info.business_data + cnt) = UART_TO_LRM_RECEIVE_BUFFER[cnt];
-				}						
-#endif	
-				p1->next = NULL;
-				
-				if(NULL != *list_head)
-				{
-					p2->next = p1;	
-				}
-				else
-				{
-					*list_head = p1;
-				}					
-			}
-		}
-		else
-		{
-#ifdef DEBUG_LOG_LEVEL_0
-			DEBUG_PRINTF ("Error：Dynamic application for memory failure -- p1\r\n");
+            p1->down_info.size = UART_TO_LRM_RECEIVE_LENGTH;
 #endif
-		}
+            if(0 == p1->down_info.size)
+            {
+                p1->down_info.business_data = NULL;
+            }
+            else
+            {
+                p1->down_info.business_data = (uint8_t *)malloc(p1->down_info.size);
+            }
+
+            if(NULL == p1->down_info.business_data && 0 != p1->down_info.size)
+            {
+                free(p1);
+#ifdef DEBUG_LOG_LEVEL_0
+                DEBUG_PRINTF ("Error：Dynamic application for memory failure -- p1->down_info.business_data\r\n");
+#endif
+            }
+            else
+            {
 #ifdef USE_NODE_STATUS
-	}
-		last_up_datarate = UART_RECEIVE_BUFFER[UART_RECEIVE_LENGTH - 1] & 0x0f;
-#endif					
+                for(cnt = 1; cnt <= p1->down_info.size; cnt++)
+                {
+                    *(p1->down_info.business_data + cnt - 1) = UART_RECEIVE_BUFFER[cnt];
+                }
+                p1->down_info.result_ind = UART_RECEIVE_BUFFER[cnt++];
+                p1->down_info.snr = UART_RECEIVE_BUFFER[cnt++];
+                p1->down_info.rssi = UART_RECEIVE_BUFFER[cnt++];
+                p1->down_info.datarate = UART_RECEIVE_BUFFER[cnt] & 0x0f;
+#else
+                for(cnt = 0; cnt < p1->down_info.size; cnt++)
+                {
+                    *(p1->down_info.business_data + cnt) = UART_TO_LRM_RECEIVE_BUFFER[cnt];
+                }
+#endif
+                p1->next = NULL;
+
+                if(NULL != *list_head)
+                {
+                    p2->next = p1;
+                }
+                else
+                {
+                    *list_head = p1;
+                }
+            }
+        }
+        else
+        {
+#ifdef DEBUG_LOG_LEVEL_0
+            DEBUG_PRINTF ("Error：Dynamic application for memory failure -- p1\r\n");
+#endif
+        }
+#ifdef USE_NODE_STATUS
+    }
+    last_up_datarate = UART_RECEIVE_BUFFER[UART_RECEIVE_LENGTH - 1] & 0x0f;
+#endif
 }
 
 
 /**
  * @brief   以阻塞的形式发送数据
- * @details 
+ * @details
  * @param   [IN]buffer: 要发送的数据包的内容
  * @param	[IN]size: 要发送的数据包的长度
  * @param	[OUT]list_head: 指向下行信息的链表头的指针，指向的链表中只有包含业务数据或在开启模块的STATUS指令是不包含业务数据的最后一条信息
@@ -510,130 +510,130 @@ static void down_data_process(down_list_t **list_head)
  */
 static execution_status_t node_block_send(uint8_t *buffer, uint8_t size, down_list_t **list_head)
 {
-	static uint8_t abnormal_count = 0;
-	
-	/* 若连续多次发生，发数据前模块一直忙或模块串口无响应，则复位模块并重新入网*/
-	if(abnormal_count > ABNORMAL_CONTINUOUS_COUNT_MAX)
-	{
-		abnormal_count = 0;
-		nodeResetJoin(300);
-	}
-	
-	free_down_info_list(list_head, all_list);
-	
-	// 1.发送数据前先判断模块是否入网
-	if(false == node_join_successfully)
-	{
-		return NODE_NOT_JOINED; 
-	}
-	// 2.判断传入的数据长度是否正确 
-	if(0 == size)
-	{
-		return USER_DATA_SIZE_WRONG; 
-	}
-	
-	// 3.拉高或保持WAKE脚为高
-	node_gpio_set(wake, wakeup);
-	
-	// 4.切到透传模式
-	node_gpio_set(mode, transparent);
-	
-	// 5.发送数据前判断模块BUSY引脚是否为低电平，若为低则等待TIMEOUT后返回
-	if( nodePinBusyStatusHolding( low, 1000 ) == false )
-	{
-		abnormal_count ++;
-		return NODE_BUSY_BFE_RECV_UDATA;
-	} 
-	
-	// 6.通过串口向模块发送数据
-	transfer_node_data(buffer, size);
-	
-	// 7.判断模块BUSY是否拉低，若1s内未拉低，则模块串口异常
-	if( nodePinBusyStatusHolding( high, 1000 ) == false )
-	{
-		abnormal_count++;
-		return NODE_IDLE_ATR_RECV_UDATA;
-	}
-	
-	abnormal_count = 0;
-	
-	// 8.等待BUSY拉高
-	do
-	{
-		/* 数据通信最大超时时间：60s */
-		if( nodePinBusyStatusHolding( low, 60*1000 ) == false )
-		{
-			return NODE_BUSY_ATR_COMM;
-		}
-		
-		/* 如果BUSY引脚拉高时长少于100ms,说明还有下行 */
-		nodePinBusyStatusHolding( high, 100 );			
-		
-		/* 是否有下行数据或者数据通信日志，等待串中断 */
-		timeout_start_flag = true;
-		while(0 == UART_TO_LRM_RECEIVE_FLAG)
-		{
-			if(true == time_out_break_ms(300))
-			{
-				break;
-			}
-		}
-		
-		if(1 == UART_TO_LRM_RECEIVE_FLAG && UART_TO_LRM_RECEIVE_LENGTH > 0)
-		{
-			UART_TO_LRM_RECEIVE_FLAG = 0;
-			
-			/* 发送下行数据或通信日志给PC */
-			UART_TO_PC_WRITE_DATA(UART_TO_LRM_RECEIVE_BUFFER,UART_TO_LRM_RECEIVE_LENGTH);
+    static uint8_t abnormal_count = 0;
 
-			/* 获取下行数据 */
-			down_data_process(list_head);
-		}
-		else
-		{
-			UART_TO_LRM_RECEIVE_LENGTH = 0;
-		}
-		
-		/* 是否已连续通信失败32次 */
-		if(31 == confirm_continue_failure_count)
-		{
-			if(low == node_gpio_read(busy) && UART_TO_LRM_RECEIVE_LENGTH < 10)
-			{
-				// 判断BUSY脚为低后查询模块当前已否已经处于重新注册状态
-				if(1 == handle_cmd_return_data("AT+JOIN?", 1, 1))
-				{
-					confirm_continue_failure_count = handle_cmd_return_data("AT+STATUS0?", 37, 2);
-				}
-				else
-				{
-					// 确认模块已发起重新注册，则清除之前的入网状态标致和确认帧连续失败计数
-					node_join_successfully = false;
-					confirm_continue_failure_count = 0;
+    /* 若连续多次发生，发数据前模块一直忙或模块串口无响应，则复位模块并重新入网*/
+    if(abnormal_count > ABNORMAL_CONTINUOUS_COUNT_MAX)
+    {
+        abnormal_count = 0;
+        nodeResetJoin(300);
+    }
+
+    free_down_info_list(list_head, all_list);
+
+    // 1.发送数据前先判断模块是否入网
+    if(false == node_join_successfully)
+    {
+        return NODE_NOT_JOINED;
+    }
+    // 2.判断传入的数据长度是否正确
+    if(0 == size)
+    {
+        return USER_DATA_SIZE_WRONG;
+    }
+
+    // 3.拉高或保持WAKE脚为高
+    node_gpio_set(wake, wakeup);
+
+    // 4.切到透传模式
+    node_gpio_set(mode, transparent);
+
+    // 5.发送数据前判断模块BUSY引脚是否为低电平，若为低则等待TIMEOUT后返回
+    if( nodePinBusyStatusHolding( low, 1000 ) == false )
+    {
+        abnormal_count ++;
+        return NODE_BUSY_BFE_RECV_UDATA;
+    }
+
+    // 6.通过串口向模块发送数据
+    transfer_node_data(buffer, size);
+
+    // 7.判断模块BUSY是否拉低，若1s内未拉低，则模块串口异常
+    if( nodePinBusyStatusHolding( high, 1000 ) == false )
+    {
+        abnormal_count++;
+        return NODE_IDLE_ATR_RECV_UDATA;
+    }
+
+    abnormal_count = 0;
+
+    // 8.等待BUSY拉高
+    do
+    {
+        /* 数据通信最大超时时间：60s */
+        if( nodePinBusyStatusHolding( low, 60*1000 ) == false )
+        {
+            return NODE_BUSY_ATR_COMM;
+        }
+
+        /* 如果BUSY引脚拉高时长少于100ms,说明还有下行 */
+        nodePinBusyStatusHolding( high, 100 );
+
+        /* 是否有下行数据或者数据通信日志，等待串中断 */
+        timeout_start_flag = true;
+        while(0 == UART_TO_LRM_RECEIVE_FLAG)
+        {
+            if(true == time_out_break_ms(300))
+            {
+                break;
+            }
+        }
+
+        if(1 == UART_TO_LRM_RECEIVE_FLAG && UART_TO_LRM_RECEIVE_LENGTH > 0)
+        {
+            UART_TO_LRM_RECEIVE_FLAG = 0;
+
+            /* 发送下行数据或通信日志给PC */
+            UART_TO_PC_WRITE_DATA(UART_TO_LRM_RECEIVE_BUFFER,UART_TO_LRM_RECEIVE_LENGTH);
+
+            /* 获取下行数据 */
+            down_data_process(list_head);
+        }
+        else
+        {
+            UART_TO_LRM_RECEIVE_LENGTH = 0;
+        }
+
+        /* 是否已连续通信失败32次 */
+        if(31 == confirm_continue_failure_count)
+        {
+            if(low == node_gpio_read(busy) && UART_TO_LRM_RECEIVE_LENGTH < 10)
+            {
+                // 判断BUSY脚为低后查询模块当前已否已经处于重新注册状态
+                if(1 == handle_cmd_return_data("AT+JOIN?", 1, 1))
+                {
+                    confirm_continue_failure_count = handle_cmd_return_data("AT+STATUS0?", 37, 2);
+                }
+                else
+                {
+                    // 确认模块已发起重新注册，则清除之前的入网状态标致和确认帧连续失败计数
+                    node_join_successfully = false;
+                    confirm_continue_failure_count = 0;
 #ifdef DEBUG_LOG_LEVEL_1
-					DEBUG_PRINTF("Start Rejoin...\r\n");
-#endif					
-					node_join_successfully = node_block_join(300);
-					
-					return NODE_COMM_NO_ACK;
-				}
-			}
-		}
-	}while(low == node_gpio_read(busy));
-	
-	
-	// 10.通过STAT引脚判断当前通信状态
-	if(low == node_gpio_read(stat))
-	{
-		/* 若该包为确认帧且未收到ACK，则确认帧连续失败计数加1 */
-		confirm_continue_failure_count += 1;
-		return NODE_COMM_NO_ACK;
-	}
-	else
-	{
-		/* 通信成功 */
-		confirm_continue_failure_count = 0;
-		return NODE_COMM_SUCC;
-	}
+                    DEBUG_PRINTF("Start Rejoin...\r\n");
+#endif
+                    node_join_successfully = node_block_join(300);
+
+                    return NODE_COMM_NO_ACK;
+                }
+            }
+        }
+    } while(low == node_gpio_read(busy));
+
+
+    // 10.通过STAT引脚判断当前通信状态
+    if(low == node_gpio_read(stat))
+    {
+        /* 若该包为确认帧且未收到ACK，则确认帧连续失败计数加1 */
+        confirm_continue_failure_count += 1;
+        return NODE_COMM_NO_ACK;
+    }
+    else
+    {
+        /* 通信成功 */
+        confirm_continue_failure_count = 0;
+        return NODE_COMM_SUCC;
+    }
 }
 
 
@@ -647,115 +647,114 @@ static execution_status_t node_block_send(uint8_t *buffer, uint8_t size, down_li
 */
 static uint32_t wait_as_respone(uint8_t *packet_end, uint8_t size, uint8_t packet_mark, uint8_t resend_num, down_list_t **list_head)
 {
-	uint8_t resend_count = 0;
-	uint32_t receive_success_bit = 0;
-	bool receive_as_answer = false;
-	bool first_point = true;
-	down_list_t *_list_head = NULL;
-	down_list_t *list_tmp = NULL;
-	down_list_t *list_storage = NULL;
+    uint8_t resend_count = 0;
+    uint32_t receive_success_bit = 0;
+    bool receive_as_answer = false;
+    bool first_point = true;
+    down_list_t *_list_head = NULL;
+    down_list_t *list_tmp = NULL;
+    down_list_t *list_storage = NULL;
 
-	while(resend_count++ <= resend_num)
-	{
+    while(resend_count++ <= resend_num)
+    {
 #ifdef DEBUG_LOG_LEVEL_1
-		uint8_t tmp = 0;
-		DEBUG_PRINTF("[SEND-LAST] ");
-		for(tmp = 0; tmp < size; tmp++)
-		{
-			DEBUG_PRINTF("%02x ", packet_end[tmp]);
-		}
-		DEBUG_PRINTF("\r\n");
+        uint8_t tmp = 0;
+        DEBUG_PRINTF("[SEND-LAST] ");
+        for(tmp = 0; tmp < size; tmp++)
+        {
+            DEBUG_PRINTF("%02x ", packet_end[tmp]);
+        }
+        DEBUG_PRINTF("\r\n");
 #endif
-		
-		_list_head = NULL;
-		node_block_send(packet_end, size, &_list_head);	
 
-		list_tmp = _list_head;
-		
-		while(NULL != list_tmp)
-		{			
-			if(list_tmp->down_info.size > 0)
-			{
-				if(0xBB == list_tmp->down_info.business_data[0] && packet_mark == list_tmp->down_info.business_data[1] &&
-				   0xAA == list_tmp->down_info.business_data[list_tmp->down_info.size - 1] && 7 == list_tmp->down_info.size)
-				{
-					receive_success_bit = list_tmp->down_info.business_data[2] | (list_tmp->down_info.business_data[3] << 8) | \
-										 (list_tmp->down_info.business_data[4] << 16) | (list_tmp->down_info.business_data[5] << 24);
-					// 分包协议数据不计入业务数据，但可能是大包中的最后一个下行，故暂保留其它状态值
-					list_tmp->down_info.size = 0;
-					receive_as_answer = true;
-				}
-				
+        _list_head = NULL;
+        node_block_send(packet_end, size, &_list_head);
+
+        list_tmp = _list_head;
+
+        while(NULL != list_tmp)
+        {
+            if(list_tmp->down_info.size > 0)
+            {
+                if(0xBB == list_tmp->down_info.business_data[0] && packet_mark == list_tmp->down_info.business_data[1] &&
+                        0xAA == list_tmp->down_info.business_data[list_tmp->down_info.size - 1] && 7 == list_tmp->down_info.size)
+                {
+                    receive_success_bit = list_tmp->down_info.business_data[2] | (list_tmp->down_info.business_data[3] << 8) | \
+                                          (list_tmp->down_info.business_data[4] << 16) | (list_tmp->down_info.business_data[5] << 24);
+                    // 分包协议数据不计入业务数据，但可能是大包中的最后一个下行，故暂保留其它状态值
+                    list_tmp->down_info.size = 0;
+                    receive_as_answer = true;
+                }
+
 #ifndef USE_NODE_STATUS
-				else
-				{
+                else
+                {
 #endif
-					if(0 != list_tmp->down_info.size || NULL == list_tmp->next)
-					{
-						if(true == first_point)
-						{
-							first_point = false;
-							list_storage = list_tmp;
-							*list_head = list_storage;
-						}
-						else
-						{
-							list_storage->next = list_tmp;
-							list_storage = list_storage->next;						
-						}						
-					}
-					
+                    if(0 != list_tmp->down_info.size || NULL == list_tmp->next)
+                    {
+                        if(true == first_point)
+                        {
+                            first_point = false;
+                            list_storage = list_tmp;
+                            *list_head = list_storage;
+                        }
+                        else
+                        {
+                            list_storage->next = list_tmp;
+                            list_storage = list_storage->next;
+                        }
+                    }
+
 #ifndef USE_NODE_STATUS
-				}
+                }
 #endif
-			}
+            }
 #ifdef USE_NODE_STATUS
-			else
-			{
-				if(true == receive_as_answer)
-				{
-					list_storage->next = list_tmp;
-					list_storage = list_storage->next;					
-				}
-				else 
-					if(resend_count > resend_num)
-				{
-					if(true == first_point)
-					{
-						first_point = false;
-						list_storage = list_tmp;
-						*list_head = list_storage;	
-					}
-					else
-					{
-						list_storage->next = list_tmp;
-						list_storage = list_storage->next;	
-					}					
-				}
-			}
+            else
+            {
+                if(true == receive_as_answer)
+                {
+                    list_storage->next = list_tmp;
+                    list_storage = list_storage->next;
+                }
+                else if(resend_count > resend_num)
+                {
+                    if(true == first_point)
+                    {
+                        first_point = false;
+                        list_storage = list_tmp;
+                        *list_head = list_storage;
+                    }
+                    else
+                    {
+                        list_storage->next = list_tmp;
+                        list_storage = list_storage->next;
+                    }
+                }
+            }
 #endif
-			list_tmp = list_tmp->next; 
-		}
+            list_tmp = list_tmp->next;
+        }
 
-		if(resend_count > resend_num)
-		{
-			free_down_info_list(&_list_head, save_data_and_last);
-		}
-		else
-		{
-			if(true == receive_as_answer)
-			{
-				free_down_info_list(&_list_head, save_data_and_last);
-				break;
-			}
-			else
-			{
-				free_down_info_list(&_list_head, save_data);
-			}
-		}
-	}
-	
-	return receive_success_bit;
+        if(resend_count > resend_num)
+        {
+            free_down_info_list(&_list_head, save_data_and_last);
+        }
+        else
+        {
+            if(true == receive_as_answer)
+            {
+                free_down_info_list(&_list_head, save_data_and_last);
+                break;
+            }
+            else
+            {
+                free_down_info_list(&_list_head, save_data);
+            }
+        }
+    }
+
+    return receive_success_bit;
 }
 
 
@@ -779,50 +778,50 @@ static uint32_t wait_as_respone(uint8_t *packet_end, uint8_t size, uint8_t packe
  */
 static void free_down_info_list(down_list_t **list_head, free_level_t free_level)
 {
-	down_list_t *p1 = NULL;
-	down_list_t *p2 = NULL;
-	
-	p1 = *list_head;
-	
-	while(p1)  
-    {  
-        p2 = p1->next;  
-		
-		switch(free_level)
-		{
-			case all_list:
-				if(NULL != p1->down_info.business_data)
-				{
-					free(p1->down_info.business_data);
-				}
-				free(p1); 
-				break;
-			case save_data:
-				if(p1->down_info.size == 0)
-				{
-					if(NULL != p1->down_info.business_data)
-					{
-						free(p1->down_info.business_data);
-					}
-					free(p1);  
-				}	
-				break;
-			case save_data_and_last:
-				if(p1->down_info.size == 0 && NULL != p2)
-				{
-					if(NULL != p1->down_info.business_data)
-					{
-						free(p1->down_info.business_data);
-					}
-					free(p1);  
-				}	
-				break;
-		}
-        
-        p1 = p2;  
-    }  
-	
-	*list_head = NULL;
+    down_list_t *p1 = NULL;
+    down_list_t *p2 = NULL;
+
+    p1 = *list_head;
+
+    while(p1)
+    {
+        p2 = p1->next;
+
+        switch(free_level)
+        {
+        case all_list:
+            if(NULL != p1->down_info.business_data)
+            {
+                free(p1->down_info.business_data);
+            }
+            free(p1);
+            break;
+        case save_data:
+            if(p1->down_info.size == 0)
+            {
+                if(NULL != p1->down_info.business_data)
+                {
+                    free(p1->down_info.business_data);
+                }
+                free(p1);
+            }
+            break;
+        case save_data_and_last:
+            if(p1->down_info.size == 0 && NULL != p2)
+            {
+                if(NULL != p1->down_info.business_data)
+                {
+                    free(p1->down_info.business_data);
+                }
+                free(p1);
+            }
+            break;
+        }
+
+        p1 = p2;
+    }
+
+    *list_head = NULL;
 }
 
 
@@ -832,14 +831,14 @@ static void free_down_info_list(down_list_t **list_head, free_level_t free_level
 static void node_hard_reset(void)
 {
 #ifdef DEBUG_LOG_LEVEL_1
-	DEBUG_PRINTF("Node hard reset\r\n");
+    DEBUG_PRINTF("Node hard reset\r\n");
 #endif
-	// 模块复位前将WAKE引脚拉高（重要）
-	node_gpio_set(wake, wakeup);
-	SET_RESET_LOW;
-	system_delay_ms(15);
-	SET_RESET_HIGH;
-	system_delay_ms(200);	
+    // 模块复位前将WAKE引脚拉高（重要）
+    node_gpio_set(wake, wakeup);
+    SET_RESET_LOW;
+    system_delay_ms(15);
+    SET_RESET_HIGH;
+    system_delay_ms(200);
 }
 
 
@@ -850,33 +849,33 @@ static void node_hard_reset(void)
  */
 static void commResultPrint(execution_status_t send_result)
 {
-	debug_printf("send_result = %d, ",send_result);
-	switch(send_result)
-	{
-		case NODE_COMM_SUCC:
-			debug_printf("node comm success.\r\n");
-		break;
-		case NODE_NOT_JOINED:
-			debug_printf("node not joined.\r\n");
-		break;
-		case NODE_COMM_NO_ACK:
-			debug_printf("node comm no ack.\r\n");
-		break;
-		case NODE_BUSY_BFE_RECV_UDATA:
-			debug_printf("node keep busy before recv user's data.\r\n");
-		break;
-		case NODE_BUSY_ATR_COMM:
-			debug_printf("node keep busy after comm.\r\n");
-		break;
-		case NODE_IDLE_ATR_RECV_UDATA:
-			debug_printf("node keep idle atfer recv usr's data.\r\n");
-		break;
-		case USER_DATA_SIZE_WRONG:
-			debug_printf("usr's data size is wrong.\r\n");
-		break;
-		default:
-		break;
-	}
+    debug_printf("send_result = %d, ",send_result);
+    switch(send_result)
+    {
+    case NODE_COMM_SUCC:
+        debug_printf("node comm success.\r\n");
+        break;
+    case NODE_NOT_JOINED:
+        debug_printf("node not joined.\r\n");
+        break;
+    case NODE_COMM_NO_ACK:
+        debug_printf("node comm no ack.\r\n");
+        break;
+    case NODE_BUSY_BFE_RECV_UDATA:
+        debug_printf("node keep busy before recv user's data.\r\n");
+        break;
+    case NODE_BUSY_ATR_COMM:
+        debug_printf("node keep busy after comm.\r\n");
+        break;
+    case NODE_IDLE_ATR_RECV_UDATA:
+        debug_printf("node keep idle atfer recv usr's data.\r\n");
+        break;
+    case USER_DATA_SIZE_WRONG:
+        debug_printf("usr's data size is wrong.\r\n");
+        break;
+    default:
+        break;
+    }
 }
 
 
@@ -897,7 +896,7 @@ static void commResultPrint(execution_status_t send_result)
  */
 void nodeGpioConfig(node_gpio_t type, node_status_t value)
 {
-	node_gpio_set(type,value);
+    node_gpio_set(type,value);
 }
 
 
@@ -907,9 +906,9 @@ void nodeGpioConfig(node_gpio_t type, node_status_t value)
  * @param   无.
  * @return  无
  */
-void nodeHardReset(void)
+void Node_Hard_Reset(void)
 {
-	node_hard_reset();
+    node_hard_reset();
 }
 
 
@@ -920,7 +919,7 @@ void nodeHardReset(void)
  */
 bool nodeCmdConfig(char *str)
 {
-	return transfer_configure_command(str);
+    return transfer_configure_command(str);
 }
 
 
@@ -931,7 +930,7 @@ bool nodeCmdConfig(char *str)
  */
 bool nodeCmdInqiure(char *str,uint8_t *content)
 {
-	return transfer_inquire_command(str,content);
+    return transfer_inquire_command(str,content);
 }
 
 
@@ -942,7 +941,7 @@ bool nodeCmdInqiure(char *str,uint8_t *content)
  */
 bool nodeJoinNet(uint16_t time_second)
 {
-	return node_block_join(time_second);
+    return node_block_join(time_second);
 }
 
 
@@ -971,17 +970,17 @@ bool nodeJoinNet(uint16_t time_second)
  */
 void nodeResetJoin(uint16_t time_second)
 {
-	node_join_successfully = false;
-	
-	// 硬件复位模块, 并配置一些掉电不保存的指令
-	nodeHardReset();
-	
-	if(false == node_join_successfully)
-	{
-		node_join_successfully = node_block_join(time_second);
-	}
+    node_join_successfully = false;
 
-	node_gpio_set(wake, sleep);
+    // 硬件复位模块, 并配置一些掉电不保存的指令
+    Node_Hard_Reset();
+
+    if(false == node_join_successfully)
+    {
+        node_join_successfully = node_block_join(time_second);
+    }
+
+    node_gpio_set(wake, sleep);
 }
 
 
@@ -993,21 +992,21 @@ void nodeResetJoin(uint16_t time_second)
  */
 execution_status_t nodeDataCommunicate(uint8_t *buffer, uint8_t size, down_list_t **list_head)
 {
-	uint8_t buf_tmp[255] = {0};
-	execution_status_t send_result;
-	
-	memcpy(buf_tmp,buffer,size);
+    uint8_t buf_tmp[255] = {0};
+    execution_status_t send_result;
+
+    memcpy(buf_tmp,buffer,size);
 #ifdef DEBUG_LOG_LEVEL_1
-	/* 打印用户数据相关信息 */
-	DEBUG_PRINTF("--send message: %s--size: %d\r\n", buf_tmp, size);
+    /* 打印用户数据相关信息 */
+    DEBUG_PRINTF("--send message: %s--size: %d\r\n", buf_tmp, size);
 #endif
-	
-	send_result = node_block_send(buffer, size, list_head);
+
+    send_result = node_block_send(buffer, size, list_head);
 
 #ifdef DEBUG_LOG_LEVEL_1
-	commResultPrint(send_result);
+    commResultPrint(send_result);
 #endif
-	return send_result;
+    return send_result;
 }
 
 #if ( M_ADVANCED_APP > 0 )
@@ -1035,14 +1034,14 @@ execution_status_t nodeDataCommunicate(uint8_t *buffer, uint8_t size, down_list_
  */
 bool hot_start_rejoin(uint16_t time_second)
 {
-	bool cmd_result = transfer_configure_command("AT+JOIN=1");
-	
-	if(true == cmd_result)
-	{
-		node_join_successfully = node_block_join(time_second);
-	}
-	
-	return cmd_result;
+    bool cmd_result = transfer_configure_command("AT+JOIN=1");
+
+    if(true == cmd_result)
+    {
+        node_join_successfully = node_block_join(time_second);
+    }
+
+    return cmd_result;
 }
 
 
@@ -1079,14 +1078,14 @@ bool hot_start_rejoin(uint16_t time_second)
  */
 execution_status_t node_block_send_lowpower(uint8_t frame_type, uint8_t *buffer, uint8_t size, down_list_t **list_head)
 {
-	execution_status_t status_result;
+    execution_status_t status_result;
 
-	// 1.调用node_block_send函数发送数据并得到返回
-	status_result = node_block_send(buffer, size, list_head);
-	// 2.发送数据完成后休眠模块
-	node_gpio_set(wake, sleep);
-		
-	return status_result;
+    // 1.调用node_block_send函数发送数据并得到返回
+    status_result = node_block_send(buffer, size, list_head);
+    // 2.发送数据完成后休眠模块
+    node_gpio_set(wake, sleep);
+
+    return status_result;
 }
 
 
@@ -1098,7 +1097,7 @@ execution_status_t node_block_send_lowpower(uint8_t frame_type, uint8_t *buffer,
  * 	  - 第一个字节为包头，固定为0xAA
  *	  - 第二个字节为大数据包的序号
  *	  - 第三个字节第7bit为应答请求位（1表示请求应答，0表示AS无需应答），第5~6bit保留，第0~4bit为分包的包序号
- *	  - 最后一个字节为包尾，固定为0xBB 
+ *	  - 最后一个字节为包尾，固定为0xBB
  *	  - 其余字节为用户数据
   2. 下行包结构（应用服务器到终端）
  *	   - 第一个字节为包头，固定为0xBB
@@ -1144,234 +1143,234 @@ execution_status_t node_block_send_lowpower(uint8_t frame_type, uint8_t *buffer,
  */
 bool node_block_send_big_packet(uint8_t *buffer, uint16_t size, uint8_t resend_num, down_list_t **list_head)
 {
-	uint8_t datarate = 0;
-	uint8_t max_data_len[6] = {47, 47, 47, 111, 218, 218};  /* X - 4 example: SF7 222 - 4 = 218 */
-	uint8_t sub_full_size = 0;
-	uint8_t sub_last_size = 0;
-	uint8_t i = 0, j = 0;
-	uint8_t sended_count = 0;
-	uint16_t packet_start_bit[32] = {0};
-	uint8_t packet_length[32] = {0};
-	uint8_t spilt_packet_data[222] = {0};
-	uint8_t sub_fcnt = 0;
-	uint8_t sub_fcnt_end = 0;
-	uint32_t communication_result_mask = 0;
-	uint32_t full_success_mask = 0;
-	static uint8_t packet_mark = 0;
-	bool first_point = true;
-	
-	down_list_t *single_list = NULL;
-	down_list_t *single_list_head = NULL;
-	down_list_t	*tmp_storage = NULL;
-	down_list_t	*last_packet_list = NULL;
-	down_list_t	*last_packet_list_head = NULL;
-	
-	free_down_info_list(list_head, all_list);
-	
-	node_gpio_set(wake, wakeup);
+    uint8_t datarate = 0;
+    uint8_t max_data_len[6] = {47, 47, 47, 111, 218, 218};  /* X - 4 example: SF7 222 - 4 = 218 */
+    uint8_t sub_full_size = 0;
+    uint8_t sub_last_size = 0;
+    uint8_t i = 0, j = 0;
+    uint8_t sended_count = 0;
+    uint16_t packet_start_bit[32] = {0};
+    uint8_t packet_length[32] = {0};
+    uint8_t spilt_packet_data[222] = {0};
+    uint8_t sub_fcnt = 0;
+    uint8_t sub_fcnt_end = 0;
+    uint32_t communication_result_mask = 0;
+    uint32_t full_success_mask = 0;
+    static uint8_t packet_mark = 0;
+    bool first_point = true;
 
-	transfer_configure_command("AT+ADR=0");
-	
-	if(-1 == last_up_datarate)
-	{
-		datarate = handle_cmd_return_data("AT+DATARATE?", 1, 1);
-	}
-	else
-	{
-		datarate = last_up_datarate;
-	}
-	// 根据查回的速率通过查表得知当前能发送用户数据的最大长度
-	sub_full_size = max_data_len[datarate]; /*表示模块返回的当前速率*/
-	sub_last_size = size % sub_full_size;
-	// 每发送一个大数据包，大包序号加一
-	packet_mark++;
-	
-	// 计算每个分包在大包的起始位置和分包的长度
-	for(sub_fcnt = 0; sub_fcnt < size / sub_full_size + 1; sub_fcnt++, i = 0)
-	{	
-		packet_start_bit[sub_fcnt] = sub_fcnt * sub_full_size;
-		
-		if(sub_fcnt == size / sub_full_size)
-		{
-			packet_length[sub_fcnt] = sub_last_size + 4;
-		}
-		else
-		{
-			packet_length[sub_fcnt] = sub_full_size + 4;
-		}
-	}
-	
-	sub_fcnt--;
-	
-	// 计算所有分包均被服务器成功接收后的掩码
-	for(i = 0; i <= sub_fcnt; i++)
-	{
-		full_success_mask |= (0x01 << sub_fcnt) >> i;
-	}
-	
-	while(full_success_mask != (communication_result_mask & full_success_mask))
-	{
-		// 若对丢失包的补发次数大于分包的个数，则可能是应用服务器处大数据处理发生异常
-		if(sended_count > sub_fcnt)
-		{
-			node_gpio_set(wake, sleep);
-			return false;
-		}
-		// 查找最后一包的分包序号
-		for(j = 0; j <= sub_fcnt; j++)
-		{
-			if(0 == ((communication_result_mask >> j) & 0x01))
-			{
-				sub_fcnt_end = j;
-			}
-		}
-		// 按照分包协议对用户数据拆分并组包发送
-		for(j = 0; j <= sub_fcnt; j++)
-		{
-			if(0 == ((communication_result_mask >> j) & 0x01))
-			{
-				// 分包的包头
-				spilt_packet_data[0] = 0xAA;
-				// 大数据包的序号
-				spilt_packet_data[1] = packet_mark;
-				// 该字节第0~4bit为分包的包序号，第5~6bit保留，第7bit为应答请求位
-				spilt_packet_data[2] = j & 0x1f;
-				// 中间为用户数据
-				for(i = 0; i < packet_length[j] - 4; i++)
-				{
-					spilt_packet_data[i + 3] = *(buffer + packet_start_bit[j] + i);
-				}
-				// 分包的包尾
-				spilt_packet_data[i + 3] = 0xBB;
-				
-				if(j == sub_fcnt_end)
-				{
-					// 若当前为所有分包中的最后一包，则第二个字节的最高位置，通知应用服务器回终端(AS成功收到了哪些分包)
-					spilt_packet_data[2] |= 0x80;
-				}
-				else
-				{
+    down_list_t *single_list = NULL;
+    down_list_t *single_list_head = NULL;
+    down_list_t	*tmp_storage = NULL;
+    down_list_t	*last_packet_list = NULL;
+    down_list_t	*last_packet_list_head = NULL;
+
+    free_down_info_list(list_head, all_list);
+
+    node_gpio_set(wake, wakeup);
+
+    transfer_configure_command("AT+ADR=0");
+
+    if(-1 == last_up_datarate)
+    {
+        datarate = handle_cmd_return_data("AT+DATARATE?", 1, 1);
+    }
+    else
+    {
+        datarate = last_up_datarate;
+    }
+    // 根据查回的速率通过查表得知当前能发送用户数据的最大长度
+    sub_full_size = max_data_len[datarate]; /*表示模块返回的当前速率*/
+    sub_last_size = size % sub_full_size;
+    // 每发送一个大数据包，大包序号加一
+    packet_mark++;
+
+    // 计算每个分包在大包的起始位置和分包的长度
+    for(sub_fcnt = 0; sub_fcnt < size / sub_full_size + 1; sub_fcnt++, i = 0)
+    {
+        packet_start_bit[sub_fcnt] = sub_fcnt * sub_full_size;
+
+        if(sub_fcnt == size / sub_full_size)
+        {
+            packet_length[sub_fcnt] = sub_last_size + 4;
+        }
+        else
+        {
+            packet_length[sub_fcnt] = sub_full_size + 4;
+        }
+    }
+
+    sub_fcnt--;
+
+    // 计算所有分包均被服务器成功接收后的掩码
+    for(i = 0; i <= sub_fcnt; i++)
+    {
+        full_success_mask |= (0x01 << sub_fcnt) >> i;
+    }
+
+    while(full_success_mask != (communication_result_mask & full_success_mask))
+    {
+        // 若对丢失包的补发次数大于分包的个数，则可能是应用服务器处大数据处理发生异常
+        if(sended_count > sub_fcnt)
+        {
+            node_gpio_set(wake, sleep);
+            return false;
+        }
+        // 查找最后一包的分包序号
+        for(j = 0; j <= sub_fcnt; j++)
+        {
+            if(0 == ((communication_result_mask >> j) & 0x01))
+            {
+                sub_fcnt_end = j;
+            }
+        }
+        // 按照分包协议对用户数据拆分并组包发送
+        for(j = 0; j <= sub_fcnt; j++)
+        {
+            if(0 == ((communication_result_mask >> j) & 0x01))
+            {
+                // 分包的包头
+                spilt_packet_data[0] = 0xAA;
+                // 大数据包的序号
+                spilt_packet_data[1] = packet_mark;
+                // 该字节第0~4bit为分包的包序号，第5~6bit保留，第7bit为应答请求位
+                spilt_packet_data[2] = j & 0x1f;
+                // 中间为用户数据
+                for(i = 0; i < packet_length[j] - 4; i++)
+                {
+                    spilt_packet_data[i + 3] = *(buffer + packet_start_bit[j] + i);
+                }
+                // 分包的包尾
+                spilt_packet_data[i + 3] = 0xBB;
+
+                if(j == sub_fcnt_end)
+                {
+                    // 若当前为所有分包中的最后一包，则第二个字节的最高位置，通知应用服务器回终端(AS成功收到了哪些分包)
+                    spilt_packet_data[2] |= 0x80;
+                }
+                else
+                {
 #ifdef DEBUG_LOG_LEVEL_1
-					uint8_t tmp = 0;
-					DEBUG_PRINTF("[SEND] ");
-					for(tmp = 0; tmp < packet_length[j]; tmp++)
-					{
-						DEBUG_PRINTF("%02x ", spilt_packet_data[tmp]);
-					}
-					DEBUG_PRINTF("\r\n");	
+                    uint8_t tmp = 0;
+                    DEBUG_PRINTF("[SEND] ");
+                    for(tmp = 0; tmp < packet_length[j]; tmp++)
+                    {
+                        DEBUG_PRINTF("%02x ", spilt_packet_data[tmp]);
+                    }
+                    DEBUG_PRINTF("\r\n");
 #endif
-					
-					single_list = NULL;
-					node_block_send(spilt_packet_data, packet_length[j], &single_list);
-					
-					// 以下代码段为使用链表对接收到的模块串口数据做相应的处理，只保留有业务数据的部分
-					single_list_head = single_list;
-					
-					while(NULL != single_list)
-					{
-						if(single_list->down_info.size > 0)
-						{
-							if(true == first_point)
-							{
-								first_point = false;
-								tmp_storage = single_list;
-								*list_head = tmp_storage;								
-							}
-							else
-							{
-								tmp_storage->next = single_list;
-								tmp_storage = tmp_storage->next;
-							}
-						}
-						single_list = single_list->next;
-					}
-					free_down_info_list(&single_list_head, save_data);
-				}
-			}
-		}
-		
-		// 发送最后一个分包，并等待AS应答
-		last_packet_list = NULL;
-		communication_result_mask = wait_as_respone(spilt_packet_data, 
-													packet_length[sub_fcnt_end], 
-													packet_mark, 
-													resend_num, 
-													&last_packet_list);
 
-		// 以下代码段为使用链表，对接收到的模块串口数据做相应的处理，只保留有业务数据的部分或所有分包中最后一包的下行信息
-		last_packet_list_head = last_packet_list;
+                    single_list = NULL;
+                    node_block_send(spilt_packet_data, packet_length[j], &single_list);
 
-		if(full_success_mask == (communication_result_mask & full_success_mask) || 
-		   0 == communication_result_mask || sended_count++ == sub_fcnt)
-		{
-			while(NULL != last_packet_list)
-			{
-				if(true == first_point)
-				{
-					first_point = false;
-					tmp_storage = last_packet_list;
-					*list_head = tmp_storage;	
-				}
-				else
-				{
-					tmp_storage->next = last_packet_list;
-					tmp_storage = tmp_storage->next;
-				}
+                    // 以下代码段为使用链表对接收到的模块串口数据做相应的处理，只保留有业务数据的部分
+                    single_list_head = single_list;
 
-				last_packet_list = last_packet_list->next;
-			}
+                    while(NULL != single_list)
+                    {
+                        if(single_list->down_info.size > 0)
+                        {
+                            if(true == first_point)
+                            {
+                                first_point = false;
+                                tmp_storage = single_list;
+                                *list_head = tmp_storage;
+                            }
+                            else
+                            {
+                                tmp_storage->next = single_list;
+                                tmp_storage = tmp_storage->next;
+                            }
+                        }
+                        single_list = single_list->next;
+                    }
+                    free_down_info_list(&single_list_head, save_data);
+                }
+            }
+        }
 
-			free_down_info_list(&last_packet_list_head, save_data_and_last);			
-		}
-		else
-		{
-			while(NULL != last_packet_list)
-			{
-				if(last_packet_list->down_info.size > 0)
-				{
-					if(true == first_point)
-					{
-						first_point = false;
-						tmp_storage = last_packet_list;
-						*list_head = tmp_storage;								
-					}
-					else
-					{
-						tmp_storage->next = last_packet_list;
-						tmp_storage = tmp_storage->next;
-					}
-				}
-		
-				last_packet_list = last_packet_list->next;
-			}
-			
-			free_down_info_list(&last_packet_list_head, save_data);
-		}
-		
-		if(0 == communication_result_mask)
-		{
+        // 发送最后一个分包，并等待AS应答
+        last_packet_list = NULL;
+        communication_result_mask = wait_as_respone(spilt_packet_data,
+                                    packet_length[sub_fcnt_end],
+                                    packet_mark,
+                                    resend_num,
+                                    &last_packet_list);
+
+        // 以下代码段为使用链表，对接收到的模块串口数据做相应的处理，只保留有业务数据的部分或所有分包中最后一包的下行信息
+        last_packet_list_head = last_packet_list;
+
+        if(full_success_mask == (communication_result_mask & full_success_mask) ||
+                0 == communication_result_mask || sended_count++ == sub_fcnt)
+        {
+            while(NULL != last_packet_list)
+            {
+                if(true == first_point)
+                {
+                    first_point = false;
+                    tmp_storage = last_packet_list;
+                    *list_head = tmp_storage;
+                }
+                else
+                {
+                    tmp_storage->next = last_packet_list;
+                    tmp_storage = tmp_storage->next;
+                }
+
+                last_packet_list = last_packet_list->next;
+            }
+
+            free_down_info_list(&last_packet_list_head, save_data_and_last);
+        }
+        else
+        {
+            while(NULL != last_packet_list)
+            {
+                if(last_packet_list->down_info.size > 0)
+                {
+                    if(true == first_point)
+                    {
+                        first_point = false;
+                        tmp_storage = last_packet_list;
+                        *list_head = tmp_storage;
+                    }
+                    else
+                    {
+                        tmp_storage->next = last_packet_list;
+                        tmp_storage = tmp_storage->next;
+                    }
+                }
+
+                last_packet_list = last_packet_list->next;
+            }
+
+            free_down_info_list(&last_packet_list_head, save_data);
+        }
+
+        if(0 == communication_result_mask)
+        {
 #ifdef DEBUG_LOG_LEVEL_1
-			DEBUG_PRINTF("Did not receive a reply from AS\r\n");
+            DEBUG_PRINTF("Did not receive a reply from AS\r\n");
 #endif
-			node_gpio_set(wake, sleep);
-			// 若AS未应答终端或错误应答，则本次大数据包通信失败
-			return false;
-		}
+            node_gpio_set(wake, sleep);
+            // 若AS未应答终端或错误应答，则本次大数据包通信失败
+            return false;
+        }
 #ifdef DEBUG_LOG_LEVEL_1
-		DEBUG_PRINTF("full_success_mask: 0x%08x, communication_result_mask: 0x%08x\r\n", full_success_mask, communication_result_mask);
+        DEBUG_PRINTF("full_success_mask: 0x%08x, communication_result_mask: 0x%08x\r\n", full_success_mask, communication_result_mask);
 #endif
-	}
-	
-	transfer_configure_command("AT+ADR=1");
-	node_gpio_set(wake, sleep);
-	
-	return true;
+    }
+
+    transfer_configure_command("AT+ADR=1");
+    node_gpio_set(wake, sleep);
+
+    return true;
 }
 
 #endif //M_ADVANCED_APP 0
 /**
   * @} Module_Driver_API_Interface
-  */ 
+  */
 
 
 /*! @} defgroup ICA-Driver */

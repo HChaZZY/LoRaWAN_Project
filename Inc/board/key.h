@@ -10,9 +10,9 @@
 
 typedef struct
 {
-	uint8_t A_KEY1;
-	uint8_t A_KEY2;
-}KEY;
+    uint8_t A_KEY1;
+    uint8_t A_KEY2;
+} KEY;
 
 void KEY_DO(KEY *key_temp,DEVICE_MODE_T *Device_Mode_temp);
 
