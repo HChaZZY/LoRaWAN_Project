@@ -61,7 +61,6 @@ u16 pos_temp1; // 坐标缓存值
 
 extern Pen_Holder Pen_Point; // 定义笔实体
 /* USER CODE END 0 */
-void DisplayStatus(void);
 /**
  * @brief  The application entry point.
  *
@@ -230,54 +229,6 @@ void assert_failed(uint8_t *file, uint32_t line)
     /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/**
- * @}
- */
-
-void DisplayStatus(void) {
-    RTC_TimeTypeDef time;
-    RTC_DateTypeDef date;
-    uint16_t temp, humi;
-    float pressure;
-    float lux;
-
-    // 读取传感器值
-    temp = HDC1000_Read_Temper();
-    humi = HDC1000_Read_Humidi();
-    pressure = MPL3115_ReadPressure();
-    lux = OPT3001_Get_Lux();
-
-    LCD_Fill(0, 0, 239, 36, BLUE);
-    char tempStr[20];
-    sprintf(tempStr, "Temperature: %d.%d C", temp / 1000, temp % 1000);
-    LCD_ShowString(10, 10, tempStr, BLACK);
-    lpusart1_send_string((uint8_t *)tempStr); // 发送温度值
-    // LCD_Clear(0xbefe);
-
-    LCD_Fill(0, 37, 239, 73, BLUE);
-    char humiStr[20];
-    sprintf(humiStr, "Humidity: %d.%d %", humi / 1000, humi % 1000);
-    LCD_ShowString(10, 47, humiStr, BLACK);
-    lpusart1_send_string((uint8_t *)humiStr); // 发送湿度值
-    // LCD_Clear(0xbefe);
-
-    LCD_Fill(0, 74, 239, 110, BLUE);
-    char pressureStr[20];
-    sprintf(pressureStr, "Pressure: %.2f Pa", pressure);
-    LCD_ShowString(10, 84, pressureStr, BLACK);
-    lpusart1_send_string((uint8_t *)pressureStr); // 发送气压值
-    // LCD_Clear(0xbefe);
-
-    LCD_Fill(0, 111, 239, 147, BLUE);
-    char luxStr[20];
-    sprintf(luxStr, "Lux: %.2f lx", lux);
-    LCD_ShowString(10, 121, luxStr, BLACK);
-    lpusart1_send_string((uint8_t *)luxStr); // 发送光照强度值
-                                             // LCD_Clear(0xbefe);
-
-    // LCD_Clear(0xbefe);
-}
 
 /**
  * @}
