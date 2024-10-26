@@ -92,6 +92,7 @@ void SyncRTCTime(void) {
     uint8_t tbuff[25] = {0};
     RTC_TimeTypeDef Ptime;
     RTC_DateTypeDef Pdate;
+    DBGPrint("Sync RTC Time...\r\n");
     nodeCmdConfig("AT+TIMESYNC\r\n");
     nodeCmdInqiure("AT+RTC?\r\n", tbuff);
     for (int i = 0, j = 0; i < strlen(tbuff); i++)
@@ -109,6 +110,7 @@ void SyncRTCTime(void) {
     Ptime.Hours = (uint8_t)tm[6] * 10 + (uint8_t)tm[7] - 16;
     Ptime.Minutes = (uint8_t)tm[8] * 10 + (uint8_t)tm[9] - 16;
     Ptime.Seconds = (uint8_t)tm[10] * 10 + (uint8_t)tm[11] - 16;
+    DBGPrint("Sync RTC Time: %d-%d-%d %d:%d:%d\r\n",Pdate.Year,Pdate.Month,Pdate.Date,Ptime.Hours,Ptime.Minutes,Ptime.Seconds);
     HAL_RTC_SetTime(&hrtc, &Ptime, RTC_FORMAT_BIN);
     HAL_RTC_SetDate(&hrtc, &Pdate, RTC_FORMAT_BIN);
 }
