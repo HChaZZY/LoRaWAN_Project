@@ -90,6 +90,7 @@ void LoRaWAN_Func_Process(void)
 
 void SyncRTCTime(void) {
     uint8_t tbuff[25] = {0};
+    uint8_t tm[25] = {0};
     RTC_TimeTypeDef Ptime;
     RTC_DateTypeDef Pdate;
     DBGPrint("Sync RTC Time...\r\n");
